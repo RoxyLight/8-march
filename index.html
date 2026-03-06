@@ -683,11 +683,11 @@
 
         async function downloadPNG() {
             const card = document.getElementById("resultCard");
-
+        
             try {
                 card.classList.add("export-mode");
                 await new Promise(resolve => setTimeout(resolve, 120));
-
+        
                 const canvas = await html2canvas(card, {
                     scale: 2,
                     useCORS: true,
@@ -695,41 +695,59 @@
                     backgroundColor: "#ffffff",
                     logging: false
                 });
-
+        
                 card.classList.remove("export-mode");
-
+        
                 const safeName = answers.name
                     ? answers.name.replace(/[^\p{L}\p{N}\s_-]/gu, "").trim()
                     : "otkrytka";
-
+        
                 const fileName = `${safeName || "otkrytka"}-8-marta.png`;
-
+        
                 canvas.toBlob((blob) => {
                     if (!blob) {
                         alert("Не удалось создать PNG-файл.");
                         return;
                     }
-
+        
                     const blobUrl = URL.createObjectURL(blob);
-
+                    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        
+                    if (isMobile) {
+                        // На телефонах надёжнее открыть изображение отдельно
+                        const newWindow = window.open(blobUrl, "_blank");
+        
+                        if (!newWindow) {
+                            alert("Не удалось открыть изображение. Разреши всплывающие окна и попробуй снова.");
+                        } else {
+                            alert("Изображение открыто в новой вкладке. Сохрани его через меню браузера или долгим нажатием.");
+                        }
+        
+                        setTimeout(() => {
+                            URL.revokeObjectURL(blobUrl);
+                        }, 10000);
+        
+                        return;
+                    }
+        
+                    // Для компьютера — обычное скачивание
                     const link = document.createElement("a");
                     link.href = blobUrl;
                     link.download = fileName;
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
-
-                    // Для Safari / iPhone иногда скачивание не срабатывает как файл.
-                    // Тогда можно открыть файл в новой вкладке.
+        
                     setTimeout(() => {
                         URL.revokeObjectURL(blobUrl);
                     }, 5000);
+        
                 }, "image/png");
-
+        
             } catch (error) {
                 card.classList.remove("export-mode");
                 console.error("Ошибка сохранения PNG:", error);
-
+        
                 alert(
                     "Не удалось сохранить PNG.\n\n" +
                     "Проверь, что все изображения открываются с того же сайта и лежат в папке проекта."
@@ -764,3 +782,4 @@
 
 
 </html>
+
